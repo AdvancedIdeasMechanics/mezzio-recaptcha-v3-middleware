@@ -8,8 +8,6 @@ use AdvancedIdeasMechanics\MezzioReCaptchaV3\Middleware\ReCaptchaMiddleware;
 use AdvancedIdeasMechanics\MezzioReCaptchaV3\Middleware\ReCaptchaMiddlewareFactory;
 use AdvancedIdeasMechanics\MezzioReCaptchaV3\Services\ReCaptchaV3Validator;
 use AdvancedIdeasMechanics\MezzioReCaptchaV3\Services\ReCaptchaV3ValidatorFactory;
-use AdvancedIdeasMechanics\MezzioReCaptchaV3\View\Helper\ReCaptchaHelper;
-use AdvancedIdeasMechanics\MezzioReCaptchaV3\View\Helper\ReCaptchaHelperFactory;
 
 class ConfigProvider
 {
@@ -17,8 +15,7 @@ class ConfigProvider
     {
         return [
             'dependencies' => $this->getDependencies(),
-            'view_helper' => $this->getViewHelpers(),
-            'recaptcha' => $this->getReCaptchaConfig(),
+            'recaptcha'    => $this->getReCaptchaConfig(),
         ];
     }
 
@@ -27,21 +24,7 @@ class ConfigProvider
         return [
             'factories' => [
                 ReCaptchaV3Validator::class => ReCaptchaV3ValidatorFactory::class,
-                ReCaptchaMiddleware::class => ReCaptchaMiddlewareFactory::class,
-                ReCaptchaHelper::class                => ReCaptchaHelperFactory::class,
-            ],
-        ];
-    }
-
-    public function getViewHelpers(): array
-    {
-        return [
-            'aliases' => [
-                'recaptcha' => ReCaptchaHelper::class,
-                'reCaptcha' => ReCaptchaHelper::class,
-            ],
-            'factories' => [
-                ReCaptchaHelper::class => ReCaptchaHelperFactory::class,
+                ReCaptchaMiddleware::class  => ReCaptchaMiddlewareFactory::class,
             ],
         ];
     }
@@ -49,10 +32,10 @@ class ConfigProvider
     public function getReCaptchaConfig(): array
     {
         return [
-            'site_key' => '',
-            'secret_key' => '',
+            'site_key'        => '',
+            'secret_key'      => '',
             'score_threshold' => 0.5,
-            'default_action' => 'submit',
+            'default_action'  => 'submit',
         ];
     }
 }
