@@ -33,6 +33,15 @@ class ConfigProvider
         ];
     }
 
+    public function getViewHelpers(): array
+    {
+        return [
+            'factories' => [
+                'recaptcha' => ReCaptchaHelperFactory::class,
+            ],
+        ];
+    }
+
     public function getReCaptchaConfig(): array
     {
         return [
