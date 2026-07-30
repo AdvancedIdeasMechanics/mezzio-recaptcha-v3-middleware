@@ -7,6 +7,7 @@ namespace AdvancedIdeasMechanics\MezzioReCaptchaV3\Services;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 class ReCaptchaV3Validator
@@ -18,27 +19,27 @@ class ReCaptchaV3Validator
         private string $projectId,
         private string $apiKey,
         private string $siteKey,
-        private float $scoreThreshold = 0.5
+        private float $scoreThreshold = 0.5,
+        private ?LoggerInterface $logger = null // Optional PSR-3 Logger
     ) {}
 
     public function verify(string $token, string $expectedAction = 'login', ?string $userIp = null): bool
     {
         if (empty($token) || empty($this->projectId) || empty($this->apiKey)) {
+            $this->logger?->warning('[reCAPTCHA] Missing token, project_id, or api_key configuration.');
             return false;
         }
 
-        // reCAPTCHA Enterprise Assessment URL
         $url = sprintf(
             'https://recaptchaenterprise.googleapis.com/v1/projects/%s/assessments?key=%s',
             $this->projectId,
             $this->apiKey
         );
 
-        // Enterprise Assessment Request Body
         $payload = [
             'event' => [
-                'token'   => $token,
-                'siteKey' => $this->siteKey,
+                'token'          => $token,
+                'siteKey'        => $this->siteKey,
                 'expectedAction' => $expectedAction,
             ],
         ];
@@ -48,32 +49,69 @@ class ReCaptchaV3Validator
         }
 
         try {
+            $jsonPayload = json_encode($payload);
+
+            // Log outgoing request
+            $this->logger?->debug('[reCAPTCHA] Requesting Assessment', [
+                'url'     => "https://recaptchaenterprise.googleapis.com/v1/projects/{$this->projectId}/assessments",
+                'payload' => $payload,
+            ]);
+
             $request = $this->requestFactory
                 ->createRequest('POST', $url)
-                ->withHeader('Content-Type', 'application/json');
-
-            $body = $this->streamFactory->createStream(json_encode($payload));
-            $request = $request->withBody($body);
+                ->withHeader('Content-Type', 'application/json')
+                ->withBody($this->streamFactory->createStream($jsonPayload));
 
             $response = $this->httpClient->sendRequest($request);
+            $responseBody = (string) $response->getBody();
+
+            // Log incoming response
+            $this->logger?->debug('[reCAPTCHA] Received Assessment Response', [
+                'status_code' => $response->getStatusCode(),
+                'response'    => json_decode($responseBody, true) ?? $responseBody,
+            ]);
 
             if ($response->getStatusCode() !== 200) {
+                $this->logger?->error('[reCAPTCHA] Enterprise API HTTP Error', [
+                    'status_code' => $response->getStatusCode(),
+                    'body'        => $responseBody,
+                ]);
                 return false;
             }
 
-            $data = json_decode((string) $response->getBody(), true);
+            $data = json_decode($responseBody, true);
 
-            // Enterprise Response Structure:
-            // $data['tokenProperties']['valid']
-            // $data['tokenProperties']['action']
-            // $data['riskAnalysis']['score']
-            $isValidToken = $data['tokenProperties']['valid'] ?? false;
-            $actionMatch  = ($data['tokenProperties']['action'] ?? '') === $expectedAction;
-            $score        = (float) ($data['riskAnalysis']['score'] ?? 0.0);
+            $isValidToken  = $data['tokenProperties']['valid'] ?? false;
+            $invalidReason = $data['tokenProperties']['invalidReason'] ?? 'NONE';
+            $actualAction  = $data['tokenProperties']['action'] ?? 'NONE';
+            $actionMatch   = $actualAction === $expectedAction;
+            $score         = (float) ($data['riskAnalysis']['score'] ?? 0.0);
 
-            return $isValidToken && $actionMatch && ($score >= $this->scoreThreshold);
+            $passed = $isValidToken && $actionMatch && ($score >= $this->scoreThreshold);
+
+            if (!$passed) {
+                $this->logger?->warning('[reCAPTCHA] Verification Failed', [
+                    'valid_token'    => $isValidToken,
+                    'invalid_reason' => $invalidReason,
+                    'expected_action'=> $expectedAction,
+                    'actual_action'  => $actualAction,
+                    'score'          => $score,
+                    'threshold'      => $this->scoreThreshold,
+                ]);
+            } else {
+                $this->logger?->info('[reCAPTCHA] Verification Passed', [
+                    'score'  => $score,
+                    'action' => $actualAction,
+                ]);
+            }
+
+            return $passed;
 
         } catch (Throwable $e) {
+            $this->logger?->error('[reCAPTCHA] Exception during verification', [
+                'exception' => $e->getMessage(),
+                'trace'     => $e->getTraceAsString(),
+            ]);
             return false;
         }
     }
