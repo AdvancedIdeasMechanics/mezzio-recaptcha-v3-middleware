@@ -6,6 +6,8 @@ namespace AdvancedIdeasMechanics\MezzioReCaptchaV3;
 
 use AdvancedIdeasMechanics\MezzioReCaptchaV3\Middleware\ReCaptchaMiddleware;
 use AdvancedIdeasMechanics\MezzioReCaptchaV3\Middleware\ReCaptchaMiddlewareFactory;
+use AdvancedIdeasMechanics\MezzioReCaptchaV3\Middleware\ReCaptchaTemplateMiddleware;
+use AdvancedIdeasMechanics\MezzioReCaptchaV3\Middleware\ReCaptchaTemplateMiddlewareFactory;
 use AdvancedIdeasMechanics\MezzioReCaptchaV3\Services\ReCaptchaV3Validator;
 use AdvancedIdeasMechanics\MezzioReCaptchaV3\Services\ReCaptchaV3ValidatorFactory;
 
@@ -25,6 +27,8 @@ class ConfigProvider
             'factories' => [
                 ReCaptchaV3Validator::class => ReCaptchaV3ValidatorFactory::class,
                 ReCaptchaMiddleware::class  => ReCaptchaMiddlewareFactory::class,
+                ReCaptchaTemplateMiddleware::class   => ReCaptchaTemplateMiddlewareFactory::class,
+
             ],
         ];
     }

@@ -25,6 +25,9 @@
     "psr/http-server-middleware": "^1.0",
     "psr/container": "^1.0 || ^2.0"
   },
+  "suggest": {
+    "mezzio/mezzio-template": "Required if you want to use ReCaptchaTemplateMiddleware to automatically inject recaptcha_site_key into view templates."
+  },
   "autoload": {
     "psr-4": {
       "AdvancedIdeasMechanics\\MezzioReCaptchaV3\\": "src/"
