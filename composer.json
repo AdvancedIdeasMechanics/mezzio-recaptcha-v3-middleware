@@ -1,5 +1,5 @@
 {
-  "name": "advancedideamechanics/mezzio-recaptcha-v3-middleware",
+  "name": "advancedideasmechanics/mezzio-recaptcha-v3-middleware",
   "description": "Google reCAPTCHA v3 PSR-15 Middleware and Service for Mezzio and Laminas applications",
   "type": "library",
   "license": "MIT",
