@@ -7,51 +7,73 @@ namespace AdvancedIdeasMechanics\MezzioReCaptchaV3\Services;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Throwable;
 
 class ReCaptchaV3Validator
 {
-    private const VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify';
-
     public function __construct(
         private ClientInterface $httpClient,
         private RequestFactoryInterface $requestFactory,
         private StreamFactoryInterface $streamFactory,
-        private string $secretKey,
+        private string $projectId,
+        private string $apiKey,
+        private string $siteKey,
         private float $scoreThreshold = 0.5
     ) {}
 
-    public function verify(string $token, ?string $expectedAction = null, ?string $userIp = null): bool
+    public function verify(string $token, string $expectedAction = 'login', ?string $userIp = null): bool
     {
-        if (empty($token)) {
+        if (empty($token) || empty($this->projectId) || empty($this->apiKey)) {
             return false;
         }
 
-        $postData = http_build_query([
-            'secret'   => $this->secretKey,
-            'response' => $token,
-            'remoteip' => $userIp,
-        ]);
+        // reCAPTCHA Enterprise Assessment URL
+        $url = sprintf(
+            'https://recaptchaenterprise.googleapis.com/v1/projects/%s/assessments?key=%s',
+            $this->projectId,
+            $this->apiKey
+        );
 
-        $request = $this->requestFactory->createRequest('POST', self::VERIFY_URL)
-            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
-            ->withBody($this->streamFactory->createStream($postData));
+        // Enterprise Assessment Request Body
+        $payload = [
+            'event' => [
+                'token'   => $token,
+                'siteKey' => $this->siteKey,
+                'expectedAction' => $expectedAction,
+            ],
+        ];
+
+        if ($userIp !== null) {
+            $payload['event']['userIpAddress'] = $userIp;
+        }
 
         try {
+            $request = $this->requestFactory
+                ->createRequest('POST', $url)
+                ->withHeader('Content-Type', 'application/json');
+
+            $body = $this->streamFactory->createStream(json_encode($payload));
+            $request = $request->withBody($body);
+
             $response = $this->httpClient->sendRequest($request);
+
+            if ($response->getStatusCode() !== 200) {
+                return false;
+            }
+
             $data = json_decode((string) $response->getBody(), true);
 
-            if (!isset($data['success']) || $data['success'] !== true) {
-                return false;
-            }
+            // Enterprise Response Structure:
+            // $data['tokenProperties']['valid']
+            // $data['tokenProperties']['action']
+            // $data['riskAnalysis']['score']
+            $isValidToken = $data['tokenProperties']['valid'] ?? false;
+            $actionMatch  = ($data['tokenProperties']['action'] ?? '') === $expectedAction;
+            $score        = (float) ($data['riskAnalysis']['score'] ?? 0.0);
 
-            // Verify action if provided
-            if ($expectedAction !== null && ($data['action'] ?? null) !== $expectedAction) {
-                return false;
-            }
+            return $isValidToken && $actionMatch && ($score >= $this->scoreThreshold);
 
-            // Check if human score passes the defined threshold
-            return ($data['score'] ?? 0.0) >= $this->scoreThreshold;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return false;
         }
     }
