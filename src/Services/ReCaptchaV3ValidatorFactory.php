@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AdvancedIdeasMechanics\MezzioReCaptchaV3\Service;
+namespace AdvancedIdeasMechanics\MezzioReCaptchaV3\Services;
 
 use GuzzleHttp\Client as GuzzleClient;
 use Laminas\Diactoros\RequestFactory as DiactorosRequestFactory;
