@@ -36,8 +36,12 @@ class ConfigProvider
     public function getViewHelpers(): array
     {
         return [
+            'aliases' => [
+                'recaptcha' => ReCaptchaHelper::class,
+                'reCaptcha' => ReCaptchaHelper::class,
+            ],
             'factories' => [
-                'recaptcha' => ReCaptchaHelperFactory::class,
+                ReCaptchaHelper::class => ReCaptchaHelperFactory::class,
             ],
         ];
     }
