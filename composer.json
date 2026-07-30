@@ -25,6 +25,9 @@
     "psr/http-server-middleware": "^1.0",
     "psr/container": "^1.0 || ^2.0"
   },
+  "suggest": {
+    "laminas-view": "Required to use the $this->recaptcha() view helper in Laminas View templates"
+  },
   "autoload": {
     "psr-4": {
       "AdvancedIdeasMechanics\\MezzioReCaptchaV3\\": "src/"

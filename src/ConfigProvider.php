@@ -8,6 +8,8 @@ use AdvancedIdeasMechanics\MezzioReCaptchaV3\Middleware\ReCaptchaMiddleware;
 use AdvancedIdeasMechanics\MezzioReCaptchaV3\Middleware\ReCaptchaMiddlewareFactory;
 use AdvancedIdeasMechanics\MezzioReCaptchaV3\Services\ReCaptchaV3Validator;
 use AdvancedIdeasMechanics\MezzioReCaptchaV3\Services\ReCaptchaV3ValidatorFactory;
+use AdvancedIdeasMechanics\MezzioReCaptchaV3\View\Helper\ReCaptchaHelper;
+use AdvancedIdeasMechanics\MezzioReCaptchaV3\View\Helper\ReCaptchaHelperFactory;
 
 class ConfigProvider
 {
@@ -15,6 +17,7 @@ class ConfigProvider
     {
         return [
             'dependencies' => $this->getDependencies(),
+            'view_helper' => $this->getViewHelpers(),
             'recaptcha' => $this->getReCaptchaConfig(),
         ];
     }
@@ -25,6 +28,7 @@ class ConfigProvider
             'factories' => [
                 ReCaptchaV3Validator::class => ReCaptchaV3ValidatorFactory::class,
                 ReCaptchaMiddleware::class => ReCaptchaMiddlewareFactory::class,
+                ReCaptchaHelper::class                => ReCaptchaHelperFactory::class,
             ],
         ];
     }
