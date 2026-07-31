@@ -16,7 +16,7 @@ class ReCaptchaMiddleware implements MiddlewareInterface
     public function __construct(
         private ReCaptchaV3Validator $validator,
         private ResponseFactoryInterface $responseFactory,
-        private ?string $expectedAction = null
+        private ?string $expectedAction = 'login'
     ) {}
 
     /**
