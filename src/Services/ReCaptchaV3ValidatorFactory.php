@@ -51,6 +51,7 @@ class ReCaptchaV3ValidatorFactory
             (string) ($config['api_key'] ?? ''),
             (string) ($config['site_key'] ?? ''),
             (float) ($config['score_threshold'] ?? 0.5),
+            (string) ($config['default_action'] ?? 'login'),
             $logger
         );
     }

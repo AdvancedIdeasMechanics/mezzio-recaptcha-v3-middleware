@@ -20,15 +20,19 @@ class ReCaptchaV3Validator
         private string $apiKey,
         private string $siteKey,
         private float $scoreThreshold = 0.5,
-        private ?LoggerInterface $logger = null // Optional PSR-3 Logger
+        private string $defaultAction = 'login',
+        private ?LoggerInterface $logger = null
     ) {}
 
-    public function verify(string $token, string $expectedAction = 'login', ?string $userIp = null): bool
+    public function verify(string $token, ?string $expectedAction = null, ?string $userIp = null): bool
     {
         if (empty($token) || empty($this->projectId) || empty($this->apiKey)) {
             $this->logger?->warning('[reCAPTCHA] Missing token, project_id, or api_key configuration.');
             return false;
         }
+
+        // Fall back to $this->defaultAction if expectedAction is null or empty
+        $action = !empty($expectedAction) ? $expectedAction : $this->defaultAction;
 
         $url = sprintf(
             'https://recaptchaenterprise.googleapis.com/v1/projects/%s/assessments?key=%s',
@@ -40,7 +44,7 @@ class ReCaptchaV3Validator
             'event' => [
                 'token'          => $token,
                 'siteKey'        => $this->siteKey,
-                'expectedAction' => $expectedAction,
+                'expectedAction' => $action,
             ],
         ];
 
@@ -84,7 +88,7 @@ class ReCaptchaV3Validator
             $isValidToken  = $data['tokenProperties']['valid'] ?? false;
             $invalidReason = $data['tokenProperties']['invalidReason'] ?? 'NONE';
             $actualAction  = $data['tokenProperties']['action'] ?? 'NONE';
-            $actionMatch   = $actualAction === $expectedAction;
+            $actionMatch   = $actualAction === $action;
             $score         = (float) ($data['riskAnalysis']['score'] ?? 0.0);
 
             $passed = $isValidToken && $actionMatch && ($score >= $this->scoreThreshold);
@@ -93,7 +97,7 @@ class ReCaptchaV3Validator
                 $this->logger?->warning('[reCAPTCHA] Verification Failed', [
                     'valid_token'    => $isValidToken,
                     'invalid_reason' => $invalidReason,
-                    'expected_action'=> $expectedAction,
+                    'expected_action'=> $action,
                     'actual_action'  => $actualAction,
                     'score'          => $score,
                     'threshold'      => $this->scoreThreshold,
