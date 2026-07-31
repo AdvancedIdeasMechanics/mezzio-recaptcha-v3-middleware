@@ -12,12 +12,12 @@ class ReCaptchaMiddlewareFactory
 {
     public function __invoke(ContainerInterface $container): ReCaptchaMiddleware
     {
-        $config = $container->get('config')['recaptcha'] ?? [];
+        $validator = $container->get(ReCaptchaV3Validator::class);
+        $responseFactory = $container->get(ResponseFactoryInterface::class);
 
-        return new ReCaptchaMiddleware(
-            $container->get(ReCaptchaV3Validator::class),
-            $container->get(ResponseFactoryInterface::class),
-            $config['default_action'] ?? null
-        );
+        $config = $container->get('config')['recaptcha'] ?? [];
+        $defaultAction = (string) ($config['default_action'] ?? 'login');
+
+        return new ReCaptchaMiddleware($validator, $responseFactory, $defaultAction);
     }
 }

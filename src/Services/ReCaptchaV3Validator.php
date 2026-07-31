@@ -32,7 +32,9 @@ class ReCaptchaV3Validator
         }
 
         // Fall back to $this->defaultAction if expectedAction is null or empty
-        $action = !empty($expectedAction) ? $expectedAction : $this->defaultAction;
+        $action = (!empty($expectedAction) && $expectedAction !== 'submit')
+            ? $expectedAction
+            : ($this->defaultAction ?: 'login');
 
         $url = sprintf(
             'https://recaptchaenterprise.googleapis.com/v1/projects/%s/assessments?key=%s',
