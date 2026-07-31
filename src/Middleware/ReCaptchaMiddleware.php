@@ -38,7 +38,8 @@ class ReCaptchaMiddleware implements MiddlewareInterface
             $serverParams = $request->getServerParams();
             $userIp = $serverParams['REMOTE_ADDR'] ?? null;
 
-            $isValid = $this->validator->verify($token, $this->expectedAction, $userIp);
+            $actionToVerify = $this->expectedAction ?? 'login';
+            $isValid = $this->validator->verify($token, $actionToVerify, $userIp);
 
             if (!$isValid) {
                 $response = $this->responseFactory->createResponse(400);
